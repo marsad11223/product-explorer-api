@@ -50,7 +50,11 @@ export class ProductService {
 
     // Log search interaction if a search query is provided
     if (search) {
-      await this.interactionService.recordSearchInteraction(sessionId);
+      await this.interactionService.recordSearchInteraction(
+        sessionId,
+        search,
+        search,
+      );
     }
 
     return {

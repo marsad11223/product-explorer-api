@@ -11,6 +11,7 @@ export class InteractionController {
     @Body('sessionId') sessionId: string,
     @Body('interactionType') interactionType: InteractionType,
     @Body('productId') productId: string,
+    @Body('searchQuery') searchQuery?: string,
   ) {
     if (!sessionId || !interactionType || !productId) {
       throw new BadRequestException('Missing required fields');
@@ -18,7 +19,11 @@ export class InteractionController {
 
     switch (interactionType) {
       case InteractionType.SEARCH:
-        return this.interactionService.recordSearchInteraction(sessionId);
+        return this.interactionService.recordSearchInteraction(
+          sessionId,
+          productId,
+          searchQuery,
+        );
       case InteractionType.VIEW:
         return this.interactionService.recordViewInteraction(
           sessionId,

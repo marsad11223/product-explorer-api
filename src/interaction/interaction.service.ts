@@ -15,21 +15,30 @@ export class InteractionService {
     sessionId: string,
     interactionType: InteractionType,
     productId?: string,
+    searchQuery?: string,
   ): Promise<UserInteraction> {
-    const interactionData: Partial<UserInteraction> = {
-      sessionId,
-      interactionType,
-      timestamp: new Date(),
-    };
+    // Find existing interaction record
 
-    if (interactionType !== InteractionType.SEARCH) {
-      interactionData.productId = productId;
+    const query = { sessionId, interactionType, searchQuery, productId };
+    const existingInteraction = await this.interactionModel.findOne(query);
+
+    if (existingInteraction) {
+      // Update the count for the existing interaction
+      existingInteraction.count += 1;
+      existingInteraction.timestamp = new Date();
+      return existingInteraction.save();
+    } else {
+      // Create a new interaction record
+      const interaction = new this.interactionModel({
+        sessionId,
+        interactionType,
+        searchQuery,
+        productId,
+        timestamp: new Date(),
+        count: 1,
+      });
+      return interaction.save();
     }
-
-    const interaction = new this.interactionModel(
-      interactionData as UserInteraction,
-    );
-    return interaction.save();
   }
 
   async recordViewInteraction(
@@ -39,8 +48,17 @@ export class InteractionService {
     return this.recordInteraction(sessionId, InteractionType.VIEW, productId);
   }
 
-  async recordSearchInteraction(sessionId: string): Promise<UserInteraction> {
-    return this.recordInteraction(sessionId, InteractionType.SEARCH);
+  async recordSearchInteraction(
+    sessionId: string,
+    productId: string,
+    searchQuery?: string,
+  ): Promise<UserInteraction> {
+    return this.recordInteraction(
+      sessionId,
+      InteractionType.SEARCH,
+      productId,
+      searchQuery,
+    );
   }
 
   async recordClickInteraction(
