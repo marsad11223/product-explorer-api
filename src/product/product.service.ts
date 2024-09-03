@@ -4,13 +4,16 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { PaginatedProducts, Product } from 'src/schemas/product.schema';
+import { InteractionService } from '../interaction/interaction.service';
+import { InteractionType } from '../interaction/interaction.types';
 
 @Injectable()
 export class ProductService {
   constructor(
     @InjectModel(Product.name) private readonly productModel: Model<Product>,
+    private readonly interactionService: InteractionService, // Inject InteractionService
   ) {}
 
   async create(createProductDto: any): Promise<Product> {
@@ -26,6 +29,7 @@ export class ProductService {
     page: number = 1,
     limit: number = 10,
     search: string = '',
+    sessionId: string, // Added sessionId parameter for interaction logging
   ): Promise<PaginatedProducts> {
     const skip = (page - 1) * limit;
 
@@ -44,6 +48,11 @@ export class ProductService {
       .limit(limit)
       .exec();
 
+    // Log search interaction if a search query is provided
+    if (search) {
+      await this.interactionService.recordSearchInteraction(sessionId);
+    }
+
     return {
       page,
       limit,
@@ -53,17 +62,20 @@ export class ProductService {
     };
   }
 
-  async findOne(id: string): Promise<Product> {
+  async findOne(id: string, sessionId: string): Promise<Product> {
     try {
       const product = await this.productModel.findById(id).exec();
       if (!product) {
         throw new NotFoundException(`Product with ID ${id} not found`);
       }
+      await this.interactionService.recordViewInteraction(sessionId, id);
+
       return product;
     } catch (error) {
       if (error.kind === 'ObjectId') {
         throw new BadRequestException('Invalid product ID format');
       }
+      console.log(error, 'error');
       throw new NotFoundException('Failed to retrieve product');
     }
   }
@@ -98,5 +110,13 @@ export class ProductService {
       }
       throw new BadRequestException('Failed to delete product');
     }
+  }
+
+  async logClickInteraction(
+    sessionId: string,
+    productId: string,
+  ): Promise<void> {
+    // This can be called from wherever you handle clicks
+    await this.interactionService.recordClickInteraction(sessionId, productId);
   }
 }
