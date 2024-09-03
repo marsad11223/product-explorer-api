@@ -23,12 +23,13 @@ export class ProductController {
   async findAll(
     @Query('page') page: string = '1', // Default to page 1
     @Query('limit') limit: string = '10', // Default to 10 items per page
+    @Query('search') search: string = '',
   ) {
     const pageNum = parseInt(page);
     const limitNum = parseInt(limit);
 
     // Call service method to get paginated data
-    return this.productService.findAll(pageNum, limitNum);
+    return this.productService.findAll(pageNum, limitNum, search);
   }
 
   @Get(':id')

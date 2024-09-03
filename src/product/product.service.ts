@@ -25,20 +25,25 @@ export class ProductService {
   async findAll(
     page: number = 1,
     limit: number = 10,
+    search: string = '',
   ): Promise<PaginatedProducts> {
-    const skip = (page - 1) * limit; // Calculate the number of documents to skip
+    const skip = (page - 1) * limit;
+
+    const query: any = {};
+    if (search) {
+      query.$text = { $search: search }; // Full-text search
+    }
 
     // Fetch total documents count
-    const totalDocuments = await this.productModel.countDocuments();
+    const totalDocuments = await this.productModel.countDocuments(query);
 
-    // Fetch products with pagination
+    // Fetch products with pagination and search
     const products = await this.productModel
-      .find()
+      .find(query)
       .skip(skip)
       .limit(limit)
       .exec();
 
-    // Return paginated data along with meta information
     return {
       page,
       limit,
