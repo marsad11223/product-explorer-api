@@ -4,14 +4,17 @@ import { ProductController } from './product.controller';
 import { ProductService } from './product.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ProductSchema } from 'src/schemas/product.schema';
-import { InteractionModule } from 'src/interaction/interaction.module';
+import { UserInteractionSchema } from 'src/schemas/interaction.schema';
+import { InteractionService } from 'src/services/interaction.service';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: 'Product', schema: ProductSchema }]),
-    InteractionModule,
+    MongooseModule.forFeature([
+      { name: 'UserInteraction', schema: UserInteractionSchema },
+    ]),
   ],
   controllers: [ProductController],
-  providers: [ProductService],
+  providers: [ProductService, InteractionService],
 })
 export class ProductModule {}

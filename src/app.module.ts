@@ -6,7 +6,6 @@ import { APP_PIPE } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ProductModule } from './product/product.module';
-import { InteractionModule } from './interaction/interaction.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
@@ -23,7 +22,6 @@ import { DashboardModule } from './dashboard/dashboard.module';
       inject: [ConfigService],
     }),
     ProductModule,
-    InteractionModule,
     DashboardModule,
   ],
   controllers: [AppController],

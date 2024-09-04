@@ -2,8 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { UserInteraction } from 'src/schemas/interaction.schema';
-import { InteractionType } from './interaction.types';
 
+export enum InteractionType {
+  SEARCH = 'search',
+  CLICK = 'click',
+  VIEW = 'view',
+  TIME_SPEND = 'time_spend',
+}
 @Injectable()
 export class InteractionService {
   constructor(
