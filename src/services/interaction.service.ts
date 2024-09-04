@@ -22,7 +22,7 @@ export class InteractionService {
     interactionType: InteractionType,
     productId?: string,
     searchQuery?: string,
-    timeSpent?: number,
+    timeSpend?: number,
   ): Promise<UserInteraction> {
     // Always create a new interaction record for each event
     const interaction = new this.interactionModel({
@@ -32,7 +32,7 @@ export class InteractionService {
       searchQuery,
       timestamp: new Date(),
       time_spend:
-        interactionType === InteractionType.TIME_SPEND ? timeSpent : undefined,
+        interactionType === InteractionType.TIME_SPEND ? timeSpend : undefined,
     });
     return interaction.save();
   }
@@ -66,9 +66,9 @@ export class InteractionService {
   async recordTimeSpentInteraction(
     sessionId: string,
     productId: string,
-    timeSpent: number,
+    timeSpend: number,
   ): Promise<UserInteraction> {
-    if (!timeSpent) {
+    if (isNaN(timeSpend) || timeSpend < 0) {
       throw new Error('Time spent is required for time tracking');
     }
     return this.recordInteraction(
@@ -76,7 +76,7 @@ export class InteractionService {
       InteractionType.TIME_SPEND,
       productId,
       undefined,
-      timeSpent,
+      timeSpend,
     );
   }
 }

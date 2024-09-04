@@ -57,21 +57,21 @@ export class ProductController {
   }
 
   // user interaction endpoints
-  @Post(':id/time-spent')
+  @Post(':id/time-spend')
   async trackTimeSpent(
     @Param('id') productId: string,
-    @Body() body: { sessionId: string; timeSpent: number },
+    @Body() body: { sessionId: string; timeSpend: number },
   ) {
-    const { sessionId, timeSpent } = body;
+    const { sessionId, timeSpend } = body;
 
-    if (!sessionId || !timeSpent || timeSpent <= 0) {
+    if (!sessionId || isNaN(timeSpend) || timeSpend < 0) {
       throw new Error('Invalid sessionId or timeSpent value.');
     }
 
     return this.interactionService.recordTimeSpentInteraction(
       sessionId,
       productId,
-      timeSpent,
+      timeSpend,
     );
   }
 
