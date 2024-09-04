@@ -14,13 +14,10 @@ export class DashboardService {
     private userInteractionModel: Model<UserInteractionDocument>,
   ) {}
 
-  // 1. Get interaction trends over the last X hours
-
   async getInteractionTrends(lastHours: number) {
     const endDate = new Date();
     const startDate = new Date(endDate.getTime() - lastHours * 60 * 60 * 1000);
 
-    // Generate boundaries in ascending order
     const boundaries = Array.from(
       { length: lastHours + 1 },
       (_, i) => new Date(startDate.getTime() + i * 60 * 60 * 1000),
@@ -78,7 +75,6 @@ export class DashboardService {
     ]);
   }
 
-  // 2. Get the most interacted products or categories
   async getMostInteractedProducts() {
     return this.userInteractionModel.aggregate([
       {
@@ -168,7 +164,6 @@ export class DashboardService {
     ]);
   }
 
-  // 3. Conversion funnel visualization from search to purchase
   async getConversionFunnel() {
     const [result] = await this.userInteractionModel.aggregate([
       {
