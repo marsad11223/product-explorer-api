@@ -35,24 +35,34 @@ export class DashboardService {
             $dateTrunc: {
               date: '$timestamp',
               unit: 'hour',
+              timezone: 'UTC',
             },
           },
-          boundaries: boundaries,
+          boundaries: boundaries.map((boundary) => boundary),
           default: 'Unknown',
           output: {
             searches: {
               $sum: {
-                $cond: [{ $eq: ['$interactionType', 'search'] }, '$count', 0],
+                $cond: [{ $eq: ['$interactionType', 'search'] }, 1, 0],
               },
             },
             views: {
               $sum: {
-                $cond: [{ $eq: ['$interactionType', 'view'] }, '$count', 0],
+                $cond: [{ $eq: ['$interactionType', 'view'] }, 1, 0],
               },
             },
             clicks: {
               $sum: {
-                $cond: [{ $eq: ['$interactionType', 'click'] }, '$count', 0],
+                $cond: [{ $eq: ['$interactionType', 'click'] }, 1, 0],
+              },
+            },
+            time_spend: {
+              $sum: {
+                $cond: [
+                  { $eq: ['$interactionType', 'time_spend'] },
+                  '$time_spend',
+                  0,
+                ],
               },
             },
           },
@@ -61,10 +71,11 @@ export class DashboardService {
       {
         $project: {
           _id: 0,
-          hour: { $hour: '$_id' },
+          hour: { $hour: { date: '$_id', timezone: 'UTC' } },
           searches: 1,
           views: 1,
           clicks: 1,
+          time_spend: 1,
         },
       },
       {
