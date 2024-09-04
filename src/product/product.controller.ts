@@ -8,11 +8,16 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
+
 import { ProductService } from './product.service';
+import { InteractionService } from 'src/services/interaction.service';
 
 @Controller('products')
 export class ProductController {
-  constructor(private readonly productService: ProductService) {}
+  constructor(
+    private readonly productService: ProductService,
+    private readonly interactionService: InteractionService,
+  ) {}
 
   @Post()
   async create(@Body() createProductDto: any) {
@@ -49,5 +54,38 @@ export class ProductController {
   @Delete(':id')
   async delete(@Param('id') id: string) {
     return this.productService.delete(id);
+  }
+
+  // user interaction endpoints
+  @Post(':id/time-spent')
+  async trackTimeSpent(
+    @Param('id') productId: string,
+    @Body() body: { sessionId: string; timeSpent: number },
+  ) {
+    const { sessionId, timeSpent } = body;
+
+    if (!sessionId || !timeSpent || timeSpent <= 0) {
+      throw new Error('Invalid sessionId or timeSpent value.');
+    }
+
+    return this.interactionService.recordTimeSpentInteraction(
+      sessionId,
+      productId,
+      timeSpent,
+    );
+  }
+
+  @Post(':id/click')
+  async trackClick(
+    @Param('id') productId: string,
+    @Body() body: { sessionId: string },
+  ) {
+    const { sessionId } = body;
+
+    if (!sessionId) {
+      throw new Error('Invalid sessionId value.');
+    }
+
+    return this.interactionService.recordClickInteraction(sessionId, productId);
   }
 }

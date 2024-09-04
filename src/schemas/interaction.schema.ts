@@ -22,6 +22,9 @@ export class UserInteraction {
 
   @Prop({ default: 1 })
   count: number;
+
+  @Prop({ default: 0 })
+  time_spend: number;
 }
 
 export const UserInteractionSchema =
