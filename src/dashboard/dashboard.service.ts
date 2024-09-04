@@ -183,32 +183,44 @@ export class DashboardService {
         $facet: {
           searches: [
             { $match: { interactionType: InteractionType.SEARCH } },
-            { $group: { _id: null, count: { $sum: '$count' } } },
+            { $group: { _id: null, totalInteractions: { $sum: 1 } } },
           ],
           views: [
             { $match: { interactionType: InteractionType.VIEW } },
-            { $group: { _id: null, count: { $sum: '$count' } } },
+            { $group: { _id: null, totalInteractions: { $sum: 1 } } },
           ],
           clicks: [
             { $match: { interactionType: InteractionType.CLICK } },
-            { $group: { _id: null, count: { $sum: '$count' } } },
+            { $group: { _id: null, totalInteractions: { $sum: 1 } } },
+          ],
+          timeSpent: [
+            { $match: { interactionType: InteractionType.TIME_SPEND } },
+            { $group: { _id: null, totalTimeSpent: { $sum: '$time_spend' } } },
           ],
         },
       },
       {
         $project: {
-          searches: { $arrayElemAt: ['$searches.count', 0] },
-          views: { $arrayElemAt: ['$views.count', 0] },
-          clicks: { $arrayElemAt: ['$clicks.count', 0] },
+          searches: { $arrayElemAt: ['$searches.totalInteractions', 0] },
+          views: { $arrayElemAt: ['$views.totalInteractions', 0] },
+          clicks: { $arrayElemAt: ['$clicks.totalInteractions', 0] },
+          totalTimeSpent: { $arrayElemAt: ['$timeSpent.totalTimeSpent', 0] },
         },
       },
     ]);
 
-    // Handle cases where there are no interactions (undefined counts)
+    // Handle cases where there are no interactions (undefined counts or time)
+    // sec to min
+
+    const totalTimeSpentInMins = Math.floor(result.totalTimeSpent / 60) || 0;
+
     return {
       searches: result.searches || 0,
       views: result.views || 0,
       clicks: result.clicks || 0,
+      totalTimeSpent: totalTimeSpentInMins,
     };
   }
 }
+
+// sec to min
