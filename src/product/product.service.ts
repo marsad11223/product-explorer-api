@@ -28,7 +28,7 @@ export class ProductService {
     page: number = 1,
     limit: number = 10,
     search: string = '',
-    sessionId: string, // Added sessionId parameter for interaction logging
+    sessionId: string,
   ): Promise<PaginatedProducts> {
     const skip = (page - 1) * limit;
 
@@ -51,11 +51,7 @@ export class ProductService {
       .exec();
 
     if (search) {
-      await this.interactionService.recordSearchInteraction(
-        sessionId,
-        search,
-        search,
-      );
+      await this.interactionService.recordSearchInteraction(sessionId, search);
     }
 
     return {

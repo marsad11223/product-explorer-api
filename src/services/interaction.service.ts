@@ -22,41 +22,19 @@ export class InteractionService {
     interactionType: InteractionType,
     productId?: string,
     searchQuery?: string,
-    timeSpent?: number, // Added timeSpent parameter
+    timeSpent?: number,
   ): Promise<UserInteraction> {
-    // Find existing interaction record
-    const query = { sessionId, interactionType, searchQuery, productId };
-    const existingInteraction = await this.interactionModel.findOne(query);
-
-    if (existingInteraction) {
-      // Update the existing interaction
-      existingInteraction.count += 1;
-      existingInteraction.timestamp = new Date();
-
-      // Update time spent if it's a TIME_SPEND interaction
-      if (interactionType === InteractionType.TIME_SPEND && timeSpent) {
-        existingInteraction.time_spend =
-          (existingInteraction.time_spend || 0) + timeSpent; // Add time spent
-      }
-
-      return existingInteraction.save();
-    } else {
-      // Create a new interaction record
-
-      const interaction = new this.interactionModel({
-        sessionId,
-        interactionType,
-        searchQuery,
-        productId,
-        timestamp: new Date(),
-        count: 1,
-        time_spend:
-          interactionType === InteractionType.TIME_SPEND
-            ? timeSpent
-            : undefined, // Set time spent if applicable
-      });
-      return interaction.save();
-    }
+    // Always create a new interaction record for each event
+    const interaction = new this.interactionModel({
+      sessionId,
+      interactionType,
+      productId,
+      searchQuery,
+      timestamp: new Date(),
+      time_spend:
+        interactionType === InteractionType.TIME_SPEND ? timeSpent : undefined,
+    });
+    return interaction.save();
   }
 
   async recordViewInteraction(
@@ -68,13 +46,12 @@ export class InteractionService {
 
   async recordSearchInteraction(
     sessionId: string,
-    productId: string,
-    searchQuery?: string,
+    searchQuery: string,
   ): Promise<UserInteraction> {
     return this.recordInteraction(
       sessionId,
       InteractionType.SEARCH,
-      productId,
+      undefined,
       searchQuery,
     );
   }

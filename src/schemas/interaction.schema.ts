@@ -20,9 +20,6 @@ export class UserInteraction {
   @Prop({ required: true })
   timestamp: Date;
 
-  @Prop({ default: 1 })
-  count: number;
-
   @Prop({ default: 0 })
   time_spend: number;
 }
