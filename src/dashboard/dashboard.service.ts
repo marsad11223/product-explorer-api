@@ -87,92 +87,94 @@ export class DashboardService {
   }
 
   async getMostInteractedProducts() {
-    return this.userInteractionModel.aggregate([
+    // Aggregation for searches
+    const searches = await this.userInteractionModel.aggregate([
+      { $match: { interactionType: InteractionType.SEARCH } },
+      { $group: { _id: '$searchQuery', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+    ]);
+
+    // Aggregation for products
+    const products = await this.userInteractionModel.aggregate([
       {
-        $facet: {
-          searches: [
-            { $match: { interactionType: InteractionType.SEARCH } },
-            { $group: { _id: '$searchQuery', count: { $sum: '$count' } } },
-            { $sort: { count: -1 } },
-          ],
-          products: [
-            {
-              $match: {
-                interactionType: {
-                  $in: [InteractionType.CLICK, InteractionType.VIEW],
-                },
-              },
+        $match: {
+          interactionType: {
+            $in: [
+              InteractionType.CLICK,
+              InteractionType.VIEW,
+              InteractionType.TIME_SPEND,
+            ],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: '$productId',
+          totalInteractions: { $sum: 1 },
+          totalClicks: {
+            $sum: {
+              $cond: [
+                { $eq: ['$interactionType', InteractionType.CLICK] },
+                1,
+                0,
+              ],
             },
-            {
-              $group: {
-                _id: '$productId',
-                count: { $sum: '$count' },
-              },
+          },
+          totalTimeSpent: {
+            $sum: {
+              $cond: [
+                { $eq: ['$interactionType', InteractionType.TIME_SPEND] },
+                '$time_spend',
+                0,
+              ],
             },
-            {
-              $addFields: {
-                productId: {
-                  $convert: {
-                    input: '$_id',
-                    to: 'objectId',
-                    onError: null,
-                    onNull: null,
-                  },
-                },
-              },
+          },
+        },
+      },
+      {
+        $addFields: {
+          productId: {
+            $convert: {
+              input: '$_id',
+              to: 'objectId',
+              onError: null,
+              onNull: null,
             },
-            {
-              $lookup: {
-                from: 'products',
-                localField: 'productId',
-                foreignField: '_id',
-                as: 'productDetails',
-              },
-            },
-            {
-              $unwind: {
-                path: '$productDetails',
-                preserveNullAndEmptyArrays: true,
-              },
-            },
-            {
-              $project: {
-                _id: 0,
-                title: {
-                  $ifNull: ['$productDetails.title', 'Unknown Product'],
-                },
-                count: 1,
-              },
-            },
-            { $sort: { count: -1 } },
-          ],
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'productId',
+          foreignField: '_id',
+          as: 'productDetails',
+        },
+      },
+      {
+        $unwind: {
+          path: '$productDetails',
+          preserveNullAndEmptyArrays: true,
         },
       },
       {
         $project: {
-          searches: {
-            $map: {
-              input: '$searches',
-              as: 'search',
-              in: {
-                query: '$$search._id',
-                count: '$$search.count',
-              },
-            },
+          _id: 0,
+          name: {
+            $ifNull: ['$productDetails.title', 'Unknown Product'],
           },
-          products: {
-            $map: {
-              input: '$products',
-              as: 'product',
-              in: {
-                name: '$$product.title',
-                count: '$$product.count',
-              },
-            },
-          },
+          totalInteractions: 1,
+          totalClicks: 1,
+          totalTimeSpent: 1,
         },
       },
+      { $sort: { totalInteractions: -1 } },
     ]);
+
+    return {
+      searches,
+      products,
+    };
   }
 
   async getConversionFunnel() {
