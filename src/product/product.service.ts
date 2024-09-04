@@ -35,20 +35,22 @@ export class ProductService {
 
     const query: any = {};
     if (search) {
-      query.$text = { $search: search }; // Full-text search
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { brand: { $regex: search, $options: 'i' } },
+        { category: { $regex: search, $options: 'i' } },
+      ];
     }
 
-    // Fetch total documents count
     const totalDocuments = await this.productModel.countDocuments(query);
 
-    // Fetch products with pagination and search
     const products = await this.productModel
       .find(query)
       .skip(skip)
       .limit(limit)
       .exec();
 
-    // Log search interaction if a search query is provided
     if (search) {
       await this.interactionService.recordSearchInteraction(
         sessionId,
