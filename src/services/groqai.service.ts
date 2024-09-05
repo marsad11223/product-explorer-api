@@ -138,6 +138,20 @@ export class GroqAIService {
       .join('\n');
   }
 
+  private getPrompt(
+    query: string,
+    interactionHistory: string,
+    productDescriptions: string,
+  ) {
+    const prompt = `Based on the user's query "${query}" and their recent interaction 
+      history which includes ${interactionHistory}, recommend the most relevant products strictly 
+      from the following options: ${productDescriptions}. Provide a concise list of product recommendations
+      using product IDs for accurate identification: 1. Product ID: [productID1] 2. Product ID: [productID2], 
+      etc. Ensure that only the products listed above are recommended and provide brief contextual assistance 
+      related to each product.`;
+
+    return prompt;
+  }
   /**
    * Main function to get product recommendations.
    */
@@ -155,12 +169,11 @@ export class GroqAIService {
         this.generateInteractionHistory(sortedInteractions);
       const productDescriptions = this.generateProductDescriptions(allProducts);
 
-      const prompt = `Based on the user's query "${query}" and their recent interaction 
-      history which includes ${interactionHistory}, recommend the most relevant products strictly 
-      from the following options: ${productDescriptions}. Provide a concise list of product recommendations
-      using product IDs for accurate identification: 1. Product ID: [productID1] 2. Product ID: [productID2], 
-      etc. Ensure that only the products listed above are recommended and provide brief contextual assistance 
-      related to each product.`;
+      const prompt = this.getPrompt(
+        query,
+        interactionHistory,
+        productDescriptions,
+      );
 
       const recommendations = await this.fetchAIRecommendations(prompt);
       const recommendedProductIds = this.extractProductIds(recommendations);
