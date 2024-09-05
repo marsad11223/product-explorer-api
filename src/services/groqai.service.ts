@@ -141,15 +141,18 @@ export class GroqAIService {
   /**
    * Main function to get product recommendations.
    */
+
   async getRecommendations(
     query: string,
   ): Promise<{ recommendationText: string; recommendedProducts: Product[] }> {
     try {
-      const sortedInteractions = await this.fetchAndSortUserInteractions();
+      const [sortedInteractions, allProducts] = await Promise.all([
+        this.fetchAndSortUserInteractions(),
+        this.fetchAllProducts(),
+      ]);
+
       const interactionHistory =
         this.generateInteractionHistory(sortedInteractions);
-
-      const allProducts = await this.fetchAllProducts();
       const productDescriptions = this.generateProductDescriptions(allProducts);
 
       const prompt = `Based on the user's query "${query}" and their recent interaction 
