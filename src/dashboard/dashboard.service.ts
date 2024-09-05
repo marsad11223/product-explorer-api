@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+
 import { InteractionType } from 'src/services/interaction.service';
 import {
   UserInteraction,
@@ -90,9 +91,15 @@ export class DashboardService {
     // Aggregation for searches
     const searches = await this.userInteractionModel.aggregate([
       { $match: { interactionType: InteractionType.SEARCH } },
-      { $group: { _id: '$searchQuery', count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
+      { $group: { _id: '$searchQuery', totalInteractions: { $sum: 1 } } },
+      { $sort: { totalInteractions: -1 } },
     ]);
+
+    // Transform searches into the desired format
+    const formattedSearches = searches.map((search) => ({
+      name: search._id,
+      data: [{ x: 'Total Interactions', y: search.totalInteractions }],
+    }));
 
     // Aggregation for products
     const products = await this.userInteractionModel.aggregate([
@@ -165,15 +172,25 @@ export class DashboardService {
           },
           totalInteractions: 1,
           totalClicks: 1,
-          totalTimeSpent: 1,
+          totalTimeSpent: { $divide: ['$totalTimeSpent', 60000] }, // Convert milliseconds to minutes
         },
       },
       { $sort: { totalInteractions: -1 } },
     ]);
 
+    // Transform products into the desired format
+    const formattedProducts = products.map((product) => ({
+      name: product.name,
+      data: [
+        { x: 'Total Interactions', y: product.totalInteractions },
+        { x: 'Total Clicks', y: product.totalClicks },
+        { x: 'Total Time Spent (min)', y: product.totalTimeSpent },
+      ],
+    }));
+
     return {
-      searches,
-      products,
+      searches: formattedSearches,
+      products: formattedProducts,
     };
   }
 
