@@ -11,12 +11,14 @@ import {
 
 import { ProductService } from './product.service';
 import { InteractionService } from 'src/services/interaction.service';
+import { GroqAIService } from 'src/services/groqai.service';
 
 @Controller('products')
 export class ProductController {
   constructor(
     private readonly productService: ProductService,
     private readonly interactionService: InteractionService,
+    private readonly groqAIService: GroqAIService,
   ) {}
 
   @Post()
@@ -87,5 +89,14 @@ export class ProductController {
     }
 
     return this.interactionService.recordClickInteraction(sessionId, productId);
+  }
+
+  @Get('openai/recommendations')
+  async getRecommendations(@Query('query') query: string) {
+    if (!query) {
+      throw new Error('Query parameter is required.');
+    }
+
+    return this.groqAIService.getRecommendations(query);
   }
 }
