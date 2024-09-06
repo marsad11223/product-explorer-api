@@ -1,9 +1,9 @@
 // nest imports
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { HttpService } from '@nestjs/axios';
 
-// third party imports
+// third-party imports
 import { AxiosResponse } from 'axios';
 import { Model } from 'mongoose';
 import * as dotenv from 'dotenv';
@@ -28,10 +28,17 @@ export class GroqAIService {
    * Fetches and sorts user interactions by timestamp.
    */
   private async fetchAndSortUserInteractions(): Promise<UserInteraction[]> {
-    const userInteractions = await this.interactionModel.find({}).exec();
-    return userInteractions.sort(
-      (a, b) => b.timestamp.getTime() - a.timestamp.getTime(),
-    );
+    try {
+      const userInteractions = await this.interactionModel.find({}).exec();
+      return userInteractions.sort(
+        (a, b) => b.timestamp.getTime() - a.timestamp.getTime(),
+      );
+    } catch (error) {
+      throw new HttpException(
+        'Failed to fetch user interactions',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   /**
@@ -57,7 +64,14 @@ export class GroqAIService {
    * Fetches all products from the database.
    */
   private async fetchAllProducts(): Promise<Product[]> {
-    return await this.productModel.find().exec();
+    try {
+      return await this.productModel.find().exec();
+    } catch (error) {
+      throw new HttpException(
+        'Failed to fetch products',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   /**
@@ -74,7 +88,6 @@ export class GroqAIService {
   /**
    * Checks if a given query is sensitive or invalid using Groq AI.
    */
-
   private async checkSensitiveContent(query: string): Promise<boolean> {
     const moderationPrompt = `
       Evaluate the following user query to determine if it contains sensitive, inappropriate, or irrelevant content. 
@@ -112,15 +125,16 @@ export class GroqAIService {
         .toPromise();
 
       const aiResponse = response.data.choices[0].message.content.trim();
-
-      // Normalize response to handle different cases
       return aiResponse.toLowerCase() === 'yes';
     } catch (error) {
       console.error(
         'Error checking sensitive content:',
         error.response?.data || error.message,
       );
-      throw new Error('Failed to check sensitive content');
+      throw new HttpException(
+        'Failed to check sensitive content',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -128,33 +142,44 @@ export class GroqAIService {
    * Calls the GROQ AI API to get product recommendations.
    */
   private async fetchAIRecommendations(prompt: string): Promise<string> {
-    const response: AxiosResponse<any> = await this.httpService
-      .post(
-        process.env.GROQ_API_URL,
-        {
-          messages: [
-            {
-              role: 'user',
-              content: prompt,
-            },
-          ],
-          model: process.env.GROQ_MODEL,
-          temperature: parseFloat(process.env.GROQ_TEMPERATURE),
-          max_tokens: parseInt(process.env.GROQ_MAX_TOKENS, 10),
-          top_p: 1,
-          stream: false,
-          stop: null,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-            'Content-Type': 'application/json',
+    try {
+      const response: AxiosResponse<any> = await this.httpService
+        .post(
+          process.env.GROQ_API_URL,
+          {
+            messages: [
+              {
+                role: 'user',
+                content: prompt,
+              },
+            ],
+            model: process.env.GROQ_MODEL,
+            temperature: parseFloat(process.env.GROQ_TEMPERATURE),
+            max_tokens: parseInt(process.env.GROQ_MAX_TOKENS, 10),
+            top_p: 1,
+            stream: false,
+            stop: null,
           },
-        },
-      )
-      .toPromise();
+          {
+            headers: {
+              Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+          },
+        )
+        .toPromise();
 
-    return response.data.choices[0].message.content.trim();
+      return response.data.choices[0].message.content.trim();
+    } catch (error) {
+      console.error(
+        'Error fetching AI recommendations:',
+        error.response?.data || error.message,
+      );
+      throw new HttpException(
+        'Failed to fetch AI recommendations',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   /**
@@ -164,7 +189,7 @@ export class GroqAIService {
     return recommendations
       .split('\n')
       .map((line) => line.match(/Product ID: (\w+)/)?.[1])
-      .filter((id) => id);
+      .filter((id): id is string => Boolean(id));
   }
 
   /**
@@ -180,7 +205,7 @@ export class GroqAIService {
 
     return productIds
       .map((id) => productMap.get(id))
-      .filter((product) => product);
+      .filter((product): product is Product => Boolean(product));
   }
 
   /**
@@ -195,19 +220,20 @@ export class GroqAIService {
       .join('\n');
   }
 
+  /**
+   * Prepares the prompt for AI recommendations.
+   */
   private getPrompt(
     query: string,
     interactionHistory: string,
     productDescriptions: string,
-  ) {
-    const prompt = `Based on the user's query "${query}" and their recent interaction 
+  ): string {
+    return `Based on the user's query "${query}" and their recent interaction 
       history which includes ${interactionHistory}, recommend the most relevant products strictly 
       from the following options: ${productDescriptions}. Provide a concise list of product recommendations
       using product IDs for accurate identification: 1. Product ID: [productID1] 2. Product ID: [productID2], 
       etc. Ensure that only the products listed above are recommended and provide brief contextual assistance 
       related to each product.`;
-
-    return prompt;
   }
 
   /**
@@ -216,11 +242,14 @@ export class GroqAIService {
   async getRecommendations(
     query: string,
   ): Promise<{ recommendationText: string; recommendedProducts: Product[] }> {
-    try {
-      if (!query) {
-        throw new Error('Query parameter is required.');
-      }
+    if (!query) {
+      throw new HttpException(
+        'Query parameter is required.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
 
+    try {
       // Step 1: Check if query is sensitive or invalid
       const isSensitive = await this.checkSensitiveContent(query);
       if (!isSensitive) {
@@ -273,7 +302,10 @@ export class GroqAIService {
         'Error fetching recommendations:',
         error.response?.data || error.message,
       );
-      throw new Error('Failed to fetch recommendations');
+      throw new HttpException(
+        'An error occurred while processing your request. Please try again later.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 }
