@@ -1,3 +1,7 @@
+// nest imports
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+
+// third-party imports
 import {
   validateOrReject,
   IsString,
@@ -5,7 +9,6 @@ import {
   IsArray,
   IsUrl,
 } from 'class-validator';
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
 @Schema()

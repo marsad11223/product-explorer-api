@@ -1,7 +1,9 @@
+// nest imports
 import { Module } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
 import { MongooseModule } from '@nestjs/mongoose';
 
+// project imports
 import { ProductSchema } from 'src/schemas/product.schema';
 import { InteractionService } from 'src/middlewares/interaction.service';
 import { GroqAIService } from 'src/middlewares/groqai.service';

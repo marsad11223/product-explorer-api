@@ -6,6 +6,8 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+
+// third-party imports
 import { Model } from 'mongoose';
 
 // project imports

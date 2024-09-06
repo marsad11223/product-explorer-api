@@ -1,4 +1,7 @@
+// nest imports
 import { Controller, Get, Query } from '@nestjs/common';
+
+// project imports
 import { DashboardService } from './dashboard.service';
 
 @Controller('dashboard')

@@ -1,7 +1,11 @@
+// nest imports
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+
+// third-party imports
 import { Model } from 'mongoose';
 
+// project imports
 import { InteractionType } from 'src/middlewares/interaction.service';
 import {
   UserInteraction,

@@ -1,4 +1,7 @@
+// nest imports
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+
+// third-party imports
 import { Document } from 'mongoose';
 
 export type UserInteractionDocument = UserInteraction & Document;
