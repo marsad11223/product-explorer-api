@@ -91,7 +91,7 @@ export class ProductController {
     return this.interactionService.recordClickInteraction(sessionId, productId);
   }
 
-  @Get('openai/recommendations')
+  @Get('groqai/recommendations')
   async getRecommendations(@Query('query') query: string) {
     if (!query) {
       throw new Error('Query parameter is required.');

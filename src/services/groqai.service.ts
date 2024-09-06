@@ -245,8 +245,15 @@ export class GroqAIService {
         recommendedProductIds,
         allProducts,
       );
-      const recommendationText =
-        this.generateRecommendationText(recommendedProducts);
+
+      let recommendationText =
+        'Here are some product recommendations based on your query:';
+      if (recommendedProducts.length === 0) {
+        recommendationText = 'No products found that match your query.';
+      } else {
+        recommendationText =
+          this.generateRecommendationText(recommendedProducts);
+      }
 
       return {
         recommendationText,
