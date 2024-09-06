@@ -172,7 +172,7 @@ export class DashboardService {
           },
           totalInteractions: 1,
           totalClicks: 1,
-          totalTimeSpent: { $divide: ['$totalTimeSpent', 60000] }, // Convert milliseconds to minutes
+          totalTimeSpent: 1,
         },
       },
       { $sort: { totalInteractions: -1 } },
@@ -184,7 +184,7 @@ export class DashboardService {
       data: [
         { x: 'Total Interactions', y: product.totalInteractions },
         { x: 'Total Clicks', y: product.totalClicks },
-        { x: 'Total Time Spent (min)', y: product.totalTimeSpent },
+        { x: 'Total Time Spent (sec)', y: product.totalTimeSpent },
       ],
     }));
 
