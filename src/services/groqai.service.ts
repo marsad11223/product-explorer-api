@@ -3,7 +3,6 @@ import { InjectModel } from '@nestjs/mongoose';
 import { HttpService } from '@nestjs/axios';
 import { AxiosResponse } from 'axios';
 import { Model } from 'mongoose';
-
 import { Product } from 'src/schemas/product.schema';
 import { UserInteraction } from 'src/schemas/interaction.schema';
 import * as dotenv from 'dotenv';
@@ -65,6 +64,59 @@ export class GroqAIService {
         return `${product.title} by ${product.brand}, ${product.category}, Price: ${product.price}, Rating: ${product.rating}, Stock: ${product.stock}, ID: ${product._id}`;
       })
       .join('. ');
+  }
+
+  /**
+   * Checks if a given query is sensitive or invalid using Groq AI.
+   */
+
+  private async checkSensitiveContent(query: string): Promise<boolean> {
+    const moderationPrompt = `
+      Evaluate the following user query to determine if it contains sensitive, inappropriate, or irrelevant content. 
+      Sensitive content includes, but is not limited to, explicit, violent, illegal, or otherwise harmful material. 
+      If the query is deemed sensitive or irrelevant to our product catalog, respond with "No". 
+      If the query is appropriate and relevant, respond with "Yes". 
+      Please provide a clear and direct answer. The query is: "${query}"
+    `;
+
+    try {
+      const response: AxiosResponse<any> = await this.httpService
+        .post(
+          process.env.GROQ_API_URL,
+          {
+            messages: [
+              {
+                role: 'user',
+                content: moderationPrompt,
+              },
+            ],
+            model: process.env.GROQ_MODEL,
+            temperature: 0, // Ensure deterministic responses
+            max_tokens: 10, // Limit response length
+            top_p: 1,
+            stream: false,
+            stop: null,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+          },
+        )
+        .toPromise();
+
+      const aiResponse = response.data.choices[0].message.content.trim();
+
+      // Normalize response to handle different cases
+      return aiResponse.toLowerCase() === 'yes';
+    } catch (error) {
+      console.error(
+        'Error checking sensitive content:',
+        error.response?.data || error.message,
+      );
+      throw new Error('Failed to check sensitive content');
+    }
   }
 
   /**
@@ -152,14 +204,25 @@ export class GroqAIService {
 
     return prompt;
   }
+
   /**
    * Main function to get product recommendations.
    */
-
   async getRecommendations(
     query: string,
   ): Promise<{ recommendationText: string; recommendedProducts: Product[] }> {
     try {
+      // Step 1: Check if query is sensitive or invalid
+      const isSensitive = await this.checkSensitiveContent(query);
+      if (!isSensitive) {
+        return {
+          recommendationText:
+            'Oops! It looks like your query contains inappropriate or unrelated content. Please try searching for something else.',
+          recommendedProducts: [],
+        };
+      }
+
+      // Step 2: Fetch and process interactions and products
       const [sortedInteractions, allProducts] = await Promise.all([
         this.fetchAndSortUserInteractions(),
         this.fetchAllProducts(),
@@ -175,6 +238,7 @@ export class GroqAIService {
         productDescriptions,
       );
 
+      // Step 3: Fetch AI Recommendations
       const recommendations = await this.fetchAIRecommendations(prompt);
       const recommendedProductIds = this.extractProductIds(recommendations);
       const recommendedProducts = this.mapProductsById(
