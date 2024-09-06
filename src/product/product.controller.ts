@@ -1,3 +1,4 @@
+// nest imports
 import {
   Controller,
   Get,
@@ -9,9 +10,16 @@ import {
   Query,
 } from '@nestjs/common';
 
+// Services
 import { ProductService } from './product.service';
 import { InteractionService } from 'src/middlewares/interaction.service';
 import { GroqAIService } from 'src/middlewares/groqai.service';
+
+// DTOs
+import { CreateProductDto } from './dtos/create-product.dto';
+import { UpdateProductDto } from './dtos/update-product.dto';
+import { TrackTimeSpentDto } from './dtos/track-time-spent.dto';
+import { TrackClickDto } from './dtos/track-click.dto';
 
 @Controller('products')
 export class ProductController {
@@ -22,7 +30,7 @@ export class ProductController {
   ) {}
 
   @Post()
-  async create(@Body() createProductDto: any) {
+  async create(@Body() createProductDto: CreateProductDto) {
     return this.productService.create(createProductDto);
   }
 
@@ -36,7 +44,6 @@ export class ProductController {
     const pageNum = parseInt(page);
     const limitNum = parseInt(limit);
 
-    // Call service method to get paginated data
     return this.productService.findAll(pageNum, limitNum, search, sessionId);
   }
 
@@ -49,7 +56,10 @@ export class ProductController {
   }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body() updateProductDto: any) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateProductDto: UpdateProductDto,
+  ) {
     return this.productService.update(id, updateProductDto);
   }
 
@@ -58,18 +68,12 @@ export class ProductController {
     return this.productService.delete(id);
   }
 
-  // user interaction endpoints
   @Post(':id/time-spend')
   async trackTimeSpent(
     @Param('id') productId: string,
-    @Body() body: { sessionId: string; timeSpend: number },
+    @Body() trackTimeSpentDto: TrackTimeSpentDto,
   ) {
-    const { sessionId, timeSpend } = body;
-
-    if (!sessionId || isNaN(timeSpend) || timeSpend < 0) {
-      throw new Error('Invalid sessionId or timeSpent value.');
-    }
-
+    const { sessionId, timeSpend } = trackTimeSpentDto;
     return this.interactionService.recordTimeSpentInteraction(
       sessionId,
       productId,
@@ -80,23 +84,14 @@ export class ProductController {
   @Post(':id/click')
   async trackClick(
     @Param('id') productId: string,
-    @Body() body: { sessionId: string },
+    @Body() trackClickDto: TrackClickDto,
   ) {
-    const { sessionId } = body;
-
-    if (!sessionId) {
-      throw new Error('Invalid sessionId value.');
-    }
-
+    const { sessionId } = trackClickDto;
     return this.interactionService.recordClickInteraction(sessionId, productId);
   }
 
   @Get('groqai/recommendations')
   async getRecommendations(@Query('query') query: string) {
-    if (!query) {
-      throw new Error('Query parameter is required.');
-    }
-
     return this.groqAIService.getRecommendations(query);
   }
 }

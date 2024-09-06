@@ -1,13 +1,25 @@
+// nest imports
 import {
   Injectable,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Model } from 'mongoose';
 
-import { PaginatedProducts, Product } from 'src/schemas/product.schema';
+// project imports
+import { Product } from 'src/schemas/product.schema';
 import { InteractionService } from 'src/middlewares/interaction.service';
+import { CreateProductDto } from './dtos/create-product.dto';
+import { UpdateProductDto } from './dtos/update-product.dto';
+
+export interface PaginatedProductsResponse {
+  page: number;
+  limit: number;
+  totalDocuments: number;
+  totalPages: number;
+  data: Product[];
+}
 
 @Injectable()
 export class ProductService {
@@ -16,7 +28,7 @@ export class ProductService {
     private readonly interactionService: InteractionService, // Inject InteractionService
   ) {}
 
-  async create(createProductDto: any): Promise<Product> {
+  async create(createProductDto: CreateProductDto): Promise<Product> {
     try {
       const createdProduct = new this.productModel(createProductDto);
       return await createdProduct.save();
@@ -30,7 +42,7 @@ export class ProductService {
     limit: number = 10,
     search: string = '',
     sessionId: string,
-  ): Promise<PaginatedProducts> {
+  ): Promise<PaginatedProductsResponse> {
     const skip = (page - 1) * limit;
 
     const query: any = {};
@@ -82,7 +94,10 @@ export class ProductService {
     }
   }
 
-  async update(id: string, updateProductDto: any): Promise<Product> {
+  async update(
+    id: string,
+    updateProductDto: UpdateProductDto,
+  ): Promise<Product> {
     try {
       const updatedProduct = await this.productModel
         .findByIdAndUpdate(id, updateProductDto, { new: true })
@@ -112,13 +127,5 @@ export class ProductService {
       }
       throw new BadRequestException('Failed to delete product');
     }
-  }
-
-  async logClickInteraction(
-    sessionId: string,
-    productId: string,
-  ): Promise<void> {
-    // This can be called from wherever you handle clicks
-    await this.interactionService.recordClickInteraction(sessionId, productId);
   }
 }

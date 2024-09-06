@@ -69,11 +69,3 @@ ProductSchema.index({
   category: 'text',
   brand: 'text',
 });
-
-export interface PaginatedProducts {
-  page: number;
-  limit: number;
-  totalDocuments: number;
-  totalPages: number;
-  data: Product[];
-}

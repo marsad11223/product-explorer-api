@@ -1,6 +1,9 @@
+// nest imports
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+
+// project imports
 import { UserInteraction } from 'src/schemas/interaction.schema';
 
 export enum InteractionType {
@@ -68,7 +71,11 @@ export class InteractionService {
     productId: string,
     timeSpend: number,
   ): Promise<UserInteraction> {
-    if (isNaN(timeSpend) || timeSpend < 0) {
+    if (!sessionId) {
+      throw new Error('Invalid sessionId value.');
+    }
+
+    if (!sessionId || isNaN(timeSpend) || timeSpend < 0) {
       throw new Error('Time spent is required for time tracking');
     }
     return this.recordInteraction(

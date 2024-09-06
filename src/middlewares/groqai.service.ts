@@ -1,11 +1,16 @@
+// nest imports
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { HttpService } from '@nestjs/axios';
+
+// third party imports
 import { AxiosResponse } from 'axios';
 import { Model } from 'mongoose';
+import * as dotenv from 'dotenv';
+
+// project imports
 import { Product } from 'src/schemas/product.schema';
 import { UserInteraction } from 'src/schemas/interaction.schema';
-import * as dotenv from 'dotenv';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -212,6 +217,10 @@ export class GroqAIService {
     query: string,
   ): Promise<{ recommendationText: string; recommendedProducts: Product[] }> {
     try {
+      if (!query) {
+        throw new Error('Query parameter is required.');
+      }
+
       // Step 1: Check if query is sensitive or invalid
       const isSensitive = await this.checkSensitiveContent(query);
       if (!isSensitive) {
