@@ -11,6 +11,12 @@ import {
   UserInteraction,
   UserInteractionDocument,
 } from 'src/schemas/interaction.schema';
+import {
+  ConversionFunnel,
+  InteractionTrend,
+  MostInteractedProductsResponse,
+  ProductInteraction,
+} from './interfaces';
 
 @Injectable()
 export class DashboardService {
@@ -19,7 +25,7 @@ export class DashboardService {
     private userInteractionModel: Model<UserInteractionDocument>,
   ) {}
 
-  async getInteractionTrends(lastHours: number) {
+  async getInteractionTrends(lastHours: number): Promise<InteractionTrend[]> {
     const endDate = new Date();
     const startDate = new Date(endDate.getTime() - lastHours * 60 * 60 * 1000);
 
@@ -91,21 +97,18 @@ export class DashboardService {
     ]);
   }
 
-  async getMostInteractedProducts() {
-    // Aggregation for searches
+  async getMostInteractedProducts(): Promise<MostInteractedProductsResponse> {
     const searches = await this.userInteractionModel.aggregate([
       { $match: { interactionType: InteractionType.SEARCH } },
       { $group: { _id: '$searchQuery', totalInteractions: { $sum: 1 } } },
       { $sort: { totalInteractions: -1 } },
     ]);
 
-    // Transform searches into the desired format
-    const formattedSearches = searches.map((search) => ({
+    const formattedSearches: ProductInteraction[] = searches.map((search) => ({
       name: search._id,
       data: [{ x: 'Total Interactions', y: search.totalInteractions }],
     }));
 
-    // Aggregation for products
     const products = await this.userInteractionModel.aggregate([
       {
         $match: {
@@ -182,8 +185,7 @@ export class DashboardService {
       { $sort: { totalInteractions: -1 } },
     ]);
 
-    // Transform products into the desired format
-    const formattedProducts = products.map((product) => ({
+    const formattedProducts: ProductInteraction[] = products.map((product) => ({
       name: product.name,
       data: [
         { x: 'Total Interactions', y: product.totalInteractions },
@@ -198,7 +200,7 @@ export class DashboardService {
     };
   }
 
-  async getConversionFunnel() {
+  async getConversionFunnel(): Promise<ConversionFunnel> {
     const [result] = await this.userInteractionModel.aggregate([
       {
         $facet: {
@@ -230,9 +232,6 @@ export class DashboardService {
       },
     ]);
 
-    // Handle cases where there are no interactions (undefined counts or time)
-    // sec to min
-
     const totalTimeSpentInMins = Math.floor(result.totalTimeSpent / 60) || 0;
 
     return {
@@ -243,5 +242,3 @@ export class DashboardService {
     };
   }
 }
-
-// sec to min
