@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
-import { InteractionType } from 'src/services/interaction.service';
+import { InteractionType } from 'src/middlewares/interaction.service';
 import {
   UserInteraction,
   UserInteractionDocument,

@@ -10,8 +10,8 @@ import {
 } from '@nestjs/common';
 
 import { ProductService } from './product.service';
-import { InteractionService } from 'src/services/interaction.service';
-import { GroqAIService } from 'src/services/groqai.service';
+import { InteractionService } from 'src/middlewares/interaction.service';
+import { GroqAIService } from 'src/middlewares/groqai.service';
 
 @Controller('products')
 export class ProductController {

@@ -3,8 +3,8 @@ import { HttpModule } from '@nestjs/axios';
 import { MongooseModule } from '@nestjs/mongoose';
 
 import { ProductSchema } from 'src/schemas/product.schema';
-import { InteractionService } from 'src/services/interaction.service';
-import { GroqAIService } from 'src/services/groqai.service';
+import { InteractionService } from 'src/middlewares/interaction.service';
+import { GroqAIService } from 'src/middlewares/groqai.service';
 import { UserInteractionSchema } from 'src/schemas/interaction.schema';
 import { ProductController } from './product.controller';
 import { ProductService } from './product.service';

@@ -5,8 +5,9 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+
 import { PaginatedProducts, Product } from 'src/schemas/product.schema';
-import { InteractionService } from 'src/services/interaction.service';
+import { InteractionService } from 'src/middlewares/interaction.service';
 
 @Injectable()
 export class ProductService {
